@@ -43,3 +43,21 @@ template Course with
         let grades = map (\x -> (x, 0)) students
         let assignment = Assignment with aid, content, submissions, grades
         create this with assignments = assignment :: assignments
+
+    -- A student submits or updates an assignment
+    choice SubmitAssignment: ContractId Course
+      with
+        aid: Int
+        submission: Text
+        student: Party
+      controller student
+      do
+        assertMsg "The student doesn't belong to this class" (elem student students)
+        assertMsg "This assignment does not exist" (aid < length assignments)
+        -- A function to replace student's submission
+        let updateSubmissions (s) = map (\(stu, sub) -> if stu == student then (stu, submission) else (stu, sub)) s
+        -- A function to update assignments submissions
+        let updateAssignment (a: Assignment) = a with submissions = (updateSubmissions a.submissions)
+        -- New assignments list after updating the assignment with input aid
+        let updatedAssignments = map (\a -> if a.aid == aid then updateAssignment a else a) assignments
+        create this with assignments = updatedAssignments

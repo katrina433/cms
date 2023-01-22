@@ -61,3 +61,54 @@ testStudentCreateAssignment = script do
   submitMustFail alice do
     exerciseCmd course CreateAssignment with
       content = "This is A2"
+
+-- Alice submits her answer for assgnment with aid 1
+testSubmitAssignment = script do
+  (prof, alice, bob, course) <- testSetup
+  
+  submit alice do
+    exerciseCmd course SubmitAssignment with
+      aid = 1
+      submission = "This is alice's answer for A1"
+      student = alice
+
+-- Professor submitting an assignment must fail
+testProfSubmitAssignment = script do
+  (prof, alice, bob, course) <- testSetup
+  
+  submitMustFail prof do
+    exerciseCmd course SubmitAssignment with
+      aid = 1
+      submission = "This is prof writing"
+      student = prof
+
+-- Alice submitting an assignment for Bob must fail
+testWrongStudentSubmitAssignment = script do
+  (prof, alice, bob, course) <- testSetup
+  
+  submitMustFail alice do
+    exerciseCmd course SubmitAssignment with
+      aid = 1
+      submission = "This is alice writing bob's homework"
+      student = bob
+
+-- A non student of the course submitting an assignment must fail
+testNonStudentSubmitAssignment = script do
+  (prof, alice, bob, course) <- testSetup
+  charlie <- allocateParty "Charlie"
+  
+  submitMustFail charlie do
+    exerciseCmd course SubmitAssignment with
+      aid = 1
+      submission = "This is charlie from next door"
+      student = charlie
+
+-- Submitting for a non existing assignment must fail
+testSubmitNonExistingAssignment = script do
+  (prof, alice, bob, course) <- testSetup
+  
+  submitMustFail alice do
+    exerciseCmd course SubmitAssignment with
+      aid = 100
+      submission = "This is alice's answer for A100"
+      student = alice
