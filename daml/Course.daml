@@ -1,9 +1,17 @@
 module Course where
 
+data Assignment = Assignment with
+  aid: Int
+  content: Text
+  submissions: [(Party, Text)]
+  grades: [(Party, Int)]
+    deriving (Eq, Show)
+
 template Course with
     title: Text
     professor: Party
     students: [Party]
+    assignments: [Assignment]
   where
     signatory professor
     observer professor, students
@@ -16,4 +24,22 @@ template Course with
       do
         assertMsg "You cannot add yourself to the class" (student /= professor)
         assertMsg "You cannot add the same student twice" (notElem student students)
-        create this with students = student :: students
+        -- Add an empty submission and grade for every assignment for the new student
+        let updateAssignment (a: Assignment) = a with submissions = ((student, "") :: a.submissions), grades = ((student, 0) :: a.grades)
+        let updatedAssignments = map updateAssignment assignments
+        let updatedStudents = student :: students
+        create this with students = updatedStudents, assignments = updatedAssignments
+
+    -- Professor can create an assignment
+    choice CreateAssignment: ContractId Course
+      with
+        content: Text
+      controller professor
+      do
+        -- aid (assignment id) is a unique integer identifier of the assignment
+        let aid = length assignments
+        -- Create empty submission and 0 grade for every student
+        let submissions = map (\x -> (x, "")) students
+        let grades = map (\x -> (x, 0)) students
+        let assignment = Assignment with aid, content, submissions, grades
+        create this with assignments = assignment :: assignments

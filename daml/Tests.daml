@@ -9,11 +9,15 @@ testSetup = script do
   alice <- allocateParty "Alice"
   bob <- allocateParty "Bob"
 
+  let a0 = Assignment with aid = 0, content = "This is A0", submissions = [(alice, "hello"), (bob, "world")], grades = [(alice, 60), (bob, 80)]
+  let a1 = Assignment with aid = 1, content = "This is A1", submissions = [(alice, ""), (bob, "")], grades = [(alice, 0), (bob, 0)]
+
   course <- submit prof do
     createCmd Course with
       title = "Daml 101"
       professor = prof
       students = [alice, bob]
+      assignments = [a0, a1]
 
   return (prof, alice, bob, course)
 
@@ -41,3 +45,19 @@ testAddProfAsStudent = script do
   submitMustFail prof do
     exerciseCmd course AddStudent with
       student = prof
+
+-- Professor adds a new assignment
+testCreateAssignment = script do
+  (prof, alice, bob, course) <- testSetup
+
+  submit prof do
+    exerciseCmd course CreateAssignment with
+      content = "This is A2"
+
+-- Student adds a new assignment must fail
+testStudentCreateAssignment = script do
+  (prof, alice, bob, course) <- testSetup
+
+  submitMustFail alice do
+    exerciseCmd course CreateAssignment with
+      content = "This is A2"
