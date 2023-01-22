@@ -1,0 +1,19 @@
+module Course where
+
+template Course with
+    title: Text
+    professor: Party
+    students: [Party]
+  where
+    signatory professor
+    observer professor, students
+    
+    -- Proessor can add a student to the course
+    choice AddStudent: ContractId Course
+      with
+        student: Party
+      controller professor
+      do
+        assertMsg "You cannot add yourself to the class" (student /= professor)
+        assertMsg "You cannot add the same student twice" (notElem student students)
+        create this with students = student :: students

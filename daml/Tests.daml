@@ -1,0 +1,43 @@
+module Tests where
+
+import Course
+import Daml.Script
+
+-- setup variables for testing
+testSetup = script do
+  prof <- allocateParty "Prof"
+  alice <- allocateParty "Alice"
+  bob <- allocateParty "Bob"
+
+  course <- submit prof do
+    createCmd Course with
+      title = "Daml 101"
+      professor = prof
+      students = [alice, bob]
+
+  return (prof, alice, bob, course)
+
+-- Add a new student to the course
+testAddStudent = script do
+  (prof, alice, bob, course) <- testSetup
+  charlie <- allocateParty "Charlie"
+  
+  submit prof do
+    exerciseCmd course AddStudent with
+      student = charlie
+
+-- Add an existing student to a course must fail
+testAddExistingStudent = script do
+  (prof, alice, bob, course) <- testSetup
+
+  submitMustFail prof do
+    exerciseCmd course AddStudent with
+      student = alice
+
+-- Add professor as a student must fail
+testAddProfAsStudent = script do
+  (prof, alice, bob, course) <- testSetup
+
+  submitMustFail prof do
+    exerciseCmd course AddStudent with
+      student = prof
