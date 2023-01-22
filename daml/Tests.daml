@@ -163,3 +163,41 @@ testGradeNonExistingAssignment = script do
       aid = 100
       grade = 100
       student = alice
+
+-- Alice checks her grade for assignment with aid 0
+testGetAssignmentGrade = script do
+  (prof, alice, bob, course) <- testSetup
+  
+  grade <- submit alice do
+    exerciseCmd course GetAssignmentGrade with
+      aid = 0
+      student = alice
+
+  assertMsg "Alice's grade for A0 should be 60" (grade == 60)
+
+-- Alice checking Bob's grade must fail
+testWrongStudentGetAssignmentGrade = script do
+  (prof, alice, bob, course) <- testSetup
+
+  submitMustFail alice do
+    exerciseCmd course GetAssignmentGrade with
+      aid = 0
+      student = bob
+
+-- Only students of the class can check their grades
+testNonStudentGetAssignmentGrade = script do
+  (prof, alice, bob, course) <- testSetup
+
+  submitMustFail prof do
+    exerciseCmd course GetAssignmentGrade with
+      aid = 0
+      student = prof
+
+-- Checking grade for a non existing assignment must fail
+testGetNonExistingAssignmentGrade = script do
+  (prof, alice, bob, course) <- testSetup
+
+  submitMustFail alice do
+    exerciseCmd course GetAssignmentGrade with
+      aid = 100
+      student = alice

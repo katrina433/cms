@@ -1,5 +1,7 @@
 module Course where
 
+import DA.List
+
 data Assignment = Assignment with
   aid: Int
   content: Text
@@ -79,3 +81,18 @@ template Course with
         -- New assignments list after updating the assignment with input aid
         let updatedAssignments = map (\a -> if a.aid == aid then updateAssignment a else a) assignments
         create this with assignments = updatedAssignments
+    
+    -- A student checking their assignment grade
+    nonconsuming choice GetAssignmentGrade: Int
+      with
+        aid: Int
+        student: Party
+      controller student
+      do
+        assertMsg "The student doesn't belong to this class" (elem student students)
+        assertMsg "This assignment does not exisst" (aid < length assignments)
+        -- Assignment with input aid
+        let assignment = head (filter (\a -> a.aid == aid) assignments)
+        -- Student's grade for the assignment
+        let (_, grade) = head (filter (\(stu, _) -> stu == student) assignment.grades)
+        return grade
