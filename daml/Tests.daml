@@ -112,3 +112,54 @@ testSubmitNonExistingAssignment = script do
       aid = 100
       submission = "This is alice's answer for A100"
       student = alice
+
+-- Professor assigns 100 to Alice for assignment with aid 1
+testGradeAssignment = script do
+  (prof, alice, bob, course) <- testSetup
+  
+  submit prof do
+    exerciseCmd course GradeAssignment with
+      aid = 1
+      grade = 100
+      student = alice
+
+-- Alice grading herself must fail
+testStudentGradeAssignment = script do
+  (prof, alice, bob, course) <- testSetup
+  
+  submitMustFail alice do
+    exerciseCmd course GradeAssignment with
+      aid = 1
+      grade = 100
+      student = alice
+
+-- Use professor as student must fail
+testGradeProfAssignment = script do
+  (prof, alice, bob, course) <- testSetup
+  
+  submitMustFail prof do
+    exerciseCmd course GradeAssignment with
+      aid = 1
+      grade = 100
+      student = prof
+
+-- Grading a non student of the course must fail
+testGradeNonStudentAssignment = script do
+  (prof, alice, bob, course) <- testSetup
+  charlie <- allocateParty "Charlie"
+  
+  submitMustFail prof do
+    exerciseCmd course GradeAssignment with
+      aid = 1
+      grade = 100
+      student = charlie
+
+-- Grading a non existing assignment must fail
+testGradeNonExistingAssignment = script do
+  (prof, alice, bob, course) <- testSetup
+  
+  submitMustFail prof do
+    exerciseCmd course GradeAssignment with
+      aid = 100
+      grade = 100
+      student = alice

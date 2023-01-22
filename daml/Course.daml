@@ -56,8 +56,26 @@ template Course with
         assertMsg "This assignment does not exist" (aid < length assignments)
         -- A function to replace student's submission
         let updateSubmissions (s) = map (\(stu, sub) -> if stu == student then (stu, submission) else (stu, sub)) s
-        -- A function to update assignments submissions
+        -- A function to update an assignment's submissions
         let updateAssignment (a: Assignment) = a with submissions = (updateSubmissions a.submissions)
+        -- New assignments list after updating the assignment with input aid
+        let updatedAssignments = map (\a -> if a.aid == aid then updateAssignment a else a) assignments
+        create this with assignments = updatedAssignments
+
+    -- Professor grades an assignment for a student
+    choice GradeAssignment: ContractId Course
+      with
+        aid: Int
+        grade: Int
+        student: Party
+      controller professor
+      do
+        assertMsg "The student doesn't belong to this class" (elem student students)
+        assertMsg "This assignment does not exisst" (aid < length assignments)
+        -- A function to update student's grade
+        let updateGrades (g) = map (\(stu, gra) -> if stu == student then (stu, grade) else (stu, gra)) g
+        -- A function to update an assignment's grades
+        let updateAssignment (a: Assignment) = a with grades = (updateGrades a.grades)
         -- New assignments list after updating the assignment with input aid
         let updatedAssignments = map (\a -> if a.aid == aid then updateAssignment a else a) assignments
         create this with assignments = updatedAssignments
