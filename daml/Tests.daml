@@ -4,6 +4,8 @@ import Course
 import Daml.Script
 
 -- setup variables for testing
+-- Create a course with professor prof, students alice and bob, and assignments with aid 0 and 1
+-- Return all parties and the created course
 testSetup = script do
   prof <- allocateParty "Prof"
   alice <- allocateParty "Alice"
@@ -201,3 +203,47 @@ testGetNonExistingAssignmentGrade = script do
     exerciseCmd course GetAssignmentGrade with
       aid = 100
       student = alice
+
+-- Professor checks the average grade for assignment with aid 0
+testGetAssignmentAverage = script do
+  (prof, alice, bob, course) <- testSetup
+
+  avg <- submit prof do
+    exerciseCmd course GetAssignmentAverage with
+      aid = 0
+
+  assertMsg "The average for A0 should be 70" (avg == 70)
+
+-- Student checking assignment average grade must fail
+testStudentGetAssignmentAverage = script do
+  (prof, alice, bob, course) <- testSetup
+
+  submitMustFail alice do
+    exerciseCmd course GetAssignmentAverage with
+      aid = 0
+
+-- Checking average grade for a non existing assignment must fail
+testGetNonExistingAssignmentAverage = script do
+  (prof, alice, bob, course) <- testSetup
+
+  submitMustFail prof do
+    exerciseCmd course GetAssignmentAverage with
+      aid = 100
+
+-- Assignment average grade should be 0 when there are no students
+testGetAssignmentAverageWithNoStudents = script do
+  prof <- allocateParty "Prof"
+  let a0 = Assignment with aid = 0, content = "This is A0", submissions = [], grades = []
+
+  course <- submit prof do
+    createCmd Course with
+      title = "Daml 101"
+      professor = prof
+      students = []
+      assignments = [a0]
+
+  avg <- submit prof do
+    exerciseCmd course GetAssignmentAverage with
+      aid = 0
+
+  assertMsg "The average for A0 should be 0" (avg == 0)

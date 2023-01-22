@@ -2,6 +2,11 @@ module Course where
 
 import DA.List
 
+-- Data for an assignment
+-- aid: a unique identifier for the assignment within the course
+-- content: a text description of the assignment
+-- submissions: a list of submissions with all students
+-- grades: a list of assignment grades with all students
 data Assignment = Assignment with
   aid: Int
   content: Text
@@ -9,6 +14,11 @@ data Assignment = Assignment with
   grades: [(Party, Int)]
     deriving (Eq, Show)
 
+-- Template for a course
+-- title: the title of the course
+-- professor: the professor of the course
+-- students: students of the course
+-- assignments: assignments of the course
 template Course with
     title: Text
     professor: Party
@@ -18,7 +28,7 @@ template Course with
     signatory professor
     observer professor, students
     
-    -- Proessor can add a student to the course
+    -- Proessor adds a student to the course
     choice AddStudent: ContractId Course
       with
         student: Party
@@ -32,7 +42,7 @@ template Course with
         let updatedStudents = student :: students
         create this with students = updatedStudents, assignments = updatedAssignments
 
-    -- Professor can create an assignment
+    -- Professor creates an assignment
     choice CreateAssignment: ContractId Course
       with
         content: Text
@@ -82,7 +92,7 @@ template Course with
         let updatedAssignments = map (\a -> if a.aid == aid then updateAssignment a else a) assignments
         create this with assignments = updatedAssignments
     
-    -- A student checking their assignment grade
+    -- A student checks their assignment grade
     nonconsuming choice GetAssignmentGrade: Int
       with
         aid: Int
@@ -96,3 +106,20 @@ template Course with
         -- Student's grade for the assignment
         let (_, grade) = head (filter (\(stu, _) -> stu == student) assignment.grades)
         return grade
+
+    -- Professor checks the average grade for an assignment
+    -- Returns 0 if there are no students
+    nonconsuming choice GetAssignmentAverage: Int
+      with
+        aid: Int
+      controller professor
+      do
+        assertMsg "This assignment does not exisst" (aid < length assignments)
+        -- Assignment with input aid
+        let assignment = head (filter (\a -> a.aid == aid) assignments)
+        -- All grades for that assignment
+        let grades = map snd assignment.grades
+        -- Average calculation
+        let numStudents = length grades
+        let avg = if numStudents == 0 then 0 else (sum grades) / numStudents
+        return avg
